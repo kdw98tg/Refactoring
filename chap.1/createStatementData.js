@@ -1,56 +1,71 @@
-function createStatementData(invoice, plays) {
+class PerformanceCalculator {
+    constructor(aPerformance, aPlay) {
+        this.performance = aPerformance;
+        this.play = aPlay;
+    }
+
+    get amount() {
+        throw new Error('서브클래스에서 이용하세요.');
+    }
+}
+
+class TragedyCalculator extends PerformanceCalculator {
+    get amount() {
+        let result = 40000;
+        if (this.performance.audience > 30) {
+            result += 1000 * (this.performance.audience - 30);
+        }
+        return result;
+    }
+
+    get volumeCredits() {
+        return Math.max(this.performance.audience - 30, 0);
+    }
+}
+
+class ComedyCalculator extends PerformanceCalculator {
+    get amount() {
+        let result = 30000;
+        if (this.performance.audience > 20) {
+            result += 10000 + 500 * (this.performance.audience - 20);
+        }
+        result += 300 * this.performance.audience;
+        return result;
+    }
+
+    get volumeCredits() {
+        let volumeCredits = Math.max(this.performance.audience - 30, 0);
+        volumeCredits += Math.floor(this.performance.audience / 5);
+        return volumeCredits
+    }
+}
+
+function createPerformanceCalculator(aPerformance, aPlay) {
+    switch (aPlay.type) {
+        case "tragedy": return new TragedyCalculator(aPerformance, aPlay);
+        case "comedy": return new ComedyCalculator(aPerformance, aPlay);
+        default: throw new Error("알 수 없는 장르 : ${aPlay.type}");
+    }
+}
+
+export default function createStatementData(invoice, plays) {
     const statementData = {};
     statementData.customer = invoice.customer;
     statementData.performances = invoice.performances.map(enrichPerformance);
-    statementData.totalAmount = totalAmount(statementData);//totalAmount 함수를 statement의 중첩함수로 만들어서 중간 데이터 생성
-    statementData.totalVolumeCredits = totalVolumeCredits(statementData);//totalVolumeCredits 함수를 statement의 중첩함수로 만들어서 중간 데이터 생성
-
+    statementData.totalAmount = totalAmount(statementData);
+    statementData.totalVolumeCredits = totalVolumeCredits(statementData);
 
     function enrichPerformance(aPerformance) {
-        const result = Object.assign({}, aPerformance);//얕은 복사 수행
-        result.play = playFor(result);//playFor 함수를 statement의 중첩함수로 만들어서 중간 데이터 생성
-        result.amount = amountFor(result);//amountFor 함수를 statement의 중첩함수로 만들어서 중간 데이터 생성
-        result.volumeCredits = volumeCreditsFor(result);//volumeCreditsFor 함수를 statement의 중첩함수로 만들어서 중간 데이터 생성
+        const calculator = createPerformanceCalculator(aPerformance, playFor(aPerformance));//계산기 생성
+        const result = Object.assign({}, aPerformance);
+        result.play = playFor(result);
+        result.amount = calculator.amount;//함수를 클래스로 이동시킨 후, 인라인
+        result.volumeCredits = calculator.volumeCredits;//함수를 클래스로 이동시킨 후, 인라인
         return result;
     }
 
     function playFor(aPerformance) {
         return plays[aPerformance.playID];
-    }
-
-    function amountFor(aPerformance) {
-        let result = 0;
-
-        switch (aPerformance.play.type) {
-            case "tragedy": //비극
-                thisAmount = 4000;
-                if (aPerformance.audience > 30) {
-                    thisAmount += 1000 * (aPerformance.audience - 30);
-                }
-                break;
-            case "comedy":
-                thisAmount = 3000;
-                if (aPerformance.audience > 20) {
-                    thisAmount += 10000 + 500 * (aPerformance.audiece - 20);
-                }
-                thisAmount += 300 * aPerformance.audience;
-                break;
-
-            default:
-                throw new Error('알 수 없는 장르: ${playFor(aPerformance).type}');
-        }
-
-        return result;//결과값 반환
-    }
-
-    function volumeCreditsFor(aPerformance) {
-        let volumeCredits = 0;
-
-        volumeCredits += Math.max(aPerformance.audience - 30, 0);
-        if ("comedy" == aPerformance.play.type) // -> 변수 인라인 하기{
-            volumeCredits += Math.floor(aPerformance.audience / 5);
-
-        return volumeCredits;
     }
 
     function totalAmount(data) {

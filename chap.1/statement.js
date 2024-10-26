@@ -8,11 +8,10 @@ function renderPlainText(data, plays) {
     let result = '청구 내역 (고객명: ${data.customer})\n'
 
     for (let perf of invoice.performances) {
-        //청구 내역을 출력함
-        result += '${perf.play.name}: ${usd(amountFor(perf.amount)/100)} (${perf.audience}석)\n';//playFor 함수 대체
-    }//for문 종료
+        result += '${perf.play.name}: ${usd(amountFor(perf.amount)/100)} (${perf.audience}석)\n';
+    }
 
-    let totalAmount = totalAmount();//->반복문 쪼개기
+    let totalAmount = totalAmount();
 
     result += '총액: ${usd(data.totalAmount/100)}\n';
     result += '적립 포인트 : ${data.totalVolumeCredits}점\n';//-> 변수 인라인 하기
@@ -44,5 +43,3 @@ function usd(aNumber) {
             minimumFractinoDigits: 2
         }).format;
 }
-
-
